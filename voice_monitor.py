@@ -25,35 +25,29 @@ intents.voice_states = True
 client = discord.Client(intents=intents)
 
 async def check_voice():
-    """Check voice channel connection."""
     await client.wait_until_ready()
     guild = client.get_guild(GUILD_ID)
-    if not guild:
-        logger.error("Guild not found!")
-        return
-
     channel = guild.get_channel(VOICE_CHANNEL_ID)
-    if not channel or not isinstance(channel, discord.VoiceChannel):
-        logger.error("Voice channel not found!")
-        return
 
     while not client.is_closed():
         try:
-            # Connect to voice channel
+            if guild.voice_client:
+                await guild.voice_client.disconnect(force=True)
+
             vc = await channel.connect(timeout=10, reconnect=False)
-            await asyncio.sleep(3)  # Let connection stabilize
+            await asyncio.sleep(3)
 
             if vc.is_connected():
-                logger.info("✅ Successfully connected to voice")
+                logger.info("✅ Connected successfully")
                 voice_status.set(1)
             else:
-                logger.warning("⚠️ Failed to connect to voice")
+                logger.warning("⚠️ Failed to connect")
                 voice_status.set(0)
 
             await vc.disconnect(force=True)
 
         except Exception as e:
-            logger.error(f"Connection error: {e}")
+            logger.error(f"Connection Error: {e}")
             voice_status.set(0)
 
         await asyncio.sleep(CHECK_INTERVAL)
